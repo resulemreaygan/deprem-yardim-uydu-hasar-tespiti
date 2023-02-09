@@ -1,0 +1,1 @@
+# deprem-yardim-uydu-hasar-tespiti
