@@ -1,0 +1,4 @@
+numpy~=1.19.5
+matplotlib~=3.1.2
+shapely~=2.0.1
+GDAL~=3.2

@@ -1,0 +1,8 @@
+{
+  "crop_size_x": 2048,
+  "crop_size_y": 2048,
+  "raster_path": "",
+  "output_dir": "",
+  "raster_format": "GTIFF",
+  "save_as_png": true
+}
