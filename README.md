@@ -23,6 +23,9 @@ GDAL kurulumunda sorun yaşarsanız iletişime geçebilirsiniz.
 Örnek veriseti paylaşılacaktır.
 
 ## Kullanım
+### Colab:
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/furkan-izgi/deprem-yardim-uydu-hasar-tespiti]
+### Local:
 
 config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu çalıştırabilirsiniz.
 
