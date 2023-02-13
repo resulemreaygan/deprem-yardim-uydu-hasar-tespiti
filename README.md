@@ -31,6 +31,15 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 
 `python main.py`
 
+## Konfig Açıklaması
+
+- `crop_size_x` = Çıktı raster'ın `genişliğini` temsil eder.
+- `crop_size_y` = Çıktı raster'ın `yüksekliğini` temsil eder.
+- `raster_path` = Kesilecek raster'ın `dosya yolunu` temsil eder.
+- `output_dir` = Çıktı `dosya yolunu` temsil eder.
+- `raster_format` = Çıktı raster'ın `formatını` temsil eder.
+- `save_as_png` = Çıktı raster'ın yanına `png` formatında kopyasının üretilmesini temsil eder.
+
 ## Katkı
 
 Katkı yapmak isterseniz lütfen önce neyi değiştirmek istediğiniz ile ilgili bir issue açın.
