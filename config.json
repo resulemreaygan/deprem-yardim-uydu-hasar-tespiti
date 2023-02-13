@@ -4,5 +4,7 @@
   "raster_path": "",
   "output_dir": "",
   "raster_format": "GTIFF",
-  "save_as_png": true
+  "save_as_png": true,
+  "crop_shape": true,
+  "shape_path": ""
 }
