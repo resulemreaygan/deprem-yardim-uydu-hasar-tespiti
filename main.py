@@ -11,7 +11,7 @@ import math
 import matplotlib.pyplot as plt
 from uuid import uuid4
 
-from osr import OAMS_TRADITIONAL_GIS_ORDER
+from osgeo.osr import OAMS_TRADITIONAL_GIS_ORDER
 from osgeo.gdal import __version__ as osgeo_version
 from shapely import wkt
 from shapely.geometry import Polygon, MultiPolygon
