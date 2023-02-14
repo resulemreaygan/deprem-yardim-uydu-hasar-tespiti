@@ -39,6 +39,8 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `output_dir` = Çıktı `dosya yolunu` temsil eder.
 - `raster_format` = Çıktı raster'ın `formatını` temsil eder.
 - `save_as_png` = Çıktı raster'ın yanına `png` formatında kopyasının üretilmesini temsil eder.
+- `crop_shape` = Verilen shapefile'ı çıktı raster'ın koordinatlarında keser.
+- `shape_path` = `crop_shape` parametresi `true` iken kesilecek shapefile'ın dosya yolunu temsil eder.
 
 ## Katkı
 
