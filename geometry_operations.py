@@ -12,6 +12,9 @@ from shapely import wkt
 
 shape_driver = GetDriverByName("ESRI Shapefile")
 
+if shape_driver is None:
+    raise ValueError("Can't find ESRI Shapefile Driver")
+
 
 def lon_lat_to_geom(lon, lat):
     geom_str = "POLYGON (("
@@ -67,11 +70,19 @@ def transform_polygon_osr(polygon, src_epsg=4326, dst_epsg=3857):
 def clip_shapefile_with_shapefile(input_shapefile, clip_shapefile, output_shapefile):
     try:
         in_ds = shape_driver.Open(input_shapefile, 0)
+
+        if in_ds is None:
+            raise IOError(f'Shapefile acilamadi! {input_shapefile}')
+
         in_layer = in_ds.GetLayer()
 
         # print(in_layer.GetFeatureCount())
 
         in_clip_ds = shape_driver.Open(clip_shapefile, 0)
+
+        if in_clip_ds is None:
+            raise IOError(f'Shapefile acilamadi! {clip_shapefile}')
+
         in_clip_layer = in_clip_ds.GetLayer()
         # print(in_clip_layer.GetFeatureCount())
 
