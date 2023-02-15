@@ -41,6 +41,7 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `save_as_png` = Çıktı raster'ın yanına `png` formatında kopyasının üretilmesini temsil eder.
 - `crop_shape` = Verilen shapefile'ı çıktı raster'ın koordinatlarında keser.
 - `shape_path` = `crop_shape` parametresi `true` iken kesilecek shapefile'ın dosya yolunu temsil eder.
+- `seg_mask` = Verilen shapefile'ın `TIF` formatında segmentation mask'ının üretilmesini temsil eder.
 
 ## Katkı
 
