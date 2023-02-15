@@ -2,7 +2,7 @@
 Author: Resul Emre AYGAN
 """
 
-from osgeo.gdal import Translate, Warp, GDT_Byte, GDT_UInt16, GRA_Bilinear
+from osgeo.gdal import Translate, Warp, GDT_Byte, GDT_UInt16, GRA_Bilinear, Rasterize
 
 
 def crop_raster_with_translate(raster_path, output_path, res_x, res_y, output_bounds, raster_format, raster_bit=8):
@@ -12,9 +12,9 @@ def crop_raster_with_translate(raster_path, output_path, res_x, res_y, output_bo
         else:
             raster_type = GDT_Byte
 
-        temp_ds = Translate(output_path, raster_path, projWin=output_bounds,
+        _ = Translate(output_path, raster_path, projWin=output_bounds,
                             xRes=res_x, yRes=-res_y, outputType=raster_type, format=raster_format)
-        temp_ds = None
+        _ = None
     except Exception as error:
         print(f"Raster kesme metotunda hata olustu: {error} - {raster_path}")
 
@@ -58,4 +58,22 @@ def change_raster_projection(raster_path, output_path, src_epsg="EPSG:3857", dst
         return True
     except Exception as error:
         print(f"Projeksiyon degistirme isleminde hata olustu. - Hata: {error}")
+        return False
+
+
+def vector_rasterization(shape_path, output_path, width, height, output_bounds, burn_value=255, output_bit=GDT_Byte):
+    try:
+        # if output_bounds is None:
+        #     ds_shp = ogr.Open(shape_path)
+        #     shp_layer = ds_shp.GetLayer()
+        #     minx, maxx, miny, maxy = shp_layer.GetExtent()
+        #     output_bounds = [minx, miny, maxx, maxy]
+
+        _ = Rasterize(output_path, shape_path, width=width, height=height ,burnValues=burn_value,
+                      outputBounds=output_bounds, outputType=output_bit, outputSRS="EPSG:4326")
+        _ = None
+
+        return True
+    except Exception as error:
+        print(f"Vektorden raster uretilirken hata olustu: {error}")
         return False

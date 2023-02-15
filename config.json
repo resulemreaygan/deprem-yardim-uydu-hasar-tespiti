@@ -6,5 +6,6 @@
   "raster_format": "GTIFF",
   "save_as_png": true,
   "crop_shape": true,
-  "shape_path": ""
+  "shape_path": "",
+  "seg_mask": true
 }

@@ -13,18 +13,22 @@ from uuid import uuid4
 from utils.load_params import load_config
 from geometry_operations import bounds_to_polygon, transform_polygon_osr, check_epsg, lon_lat_to_geom, \
     create_shapefile, clip_shapefile_with_shapefile
-from raster_operations import crop_raster_with_warp, crop_raster_with_translate, change_raster_projection
+from raster_operations import crop_raster_with_warp, crop_raster_with_translate, change_raster_projection, \
+    vector_rasterization
 
 
 def get_array_from_raster(file_path, only_info=True):
-    temp_ds = gdal.Open(file_path)
+    raster_ds = gdal.Open(file_path)
 
-    band_number = temp_ds.RasterCount
-    projection = temp_ds.GetProjection()
-    geo_transform = temp_ds.GetGeoTransform()
+    if raster_ds is None:
+        raise IOError(f'Tif dosyasi acilamadi! {file_path}')
 
-    width = temp_ds.RasterXSize
-    height = temp_ds.RasterYSize
+    band_number = raster_ds.RasterCount
+    projection = raster_ds.GetProjection()
+    geo_transform = raster_ds.GetGeoTransform()
+
+    width = raster_ds.RasterXSize
+    height = raster_ds.RasterYSize
 
     min_x = geo_transform[0]
     min_y = geo_transform[3] + width * geo_transform[4] + height * geo_transform[5]
@@ -45,16 +49,16 @@ def get_array_from_raster(file_path, only_info=True):
 
     if not only_info:
         if band_number > 2:
-            original_raster = np.dstack([temp_ds.GetRasterBand(1).ReadAsArray(),
-                                         temp_ds.GetRasterBand(2).ReadAsArray(),
-                                         temp_ds.GetRasterBand(3).ReadAsArray()])
+            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray(),
+                                         raster_ds.GetRasterBand(2).ReadAsArray(),
+                                         raster_ds.GetRasterBand(3).ReadAsArray()])
             if band_number > 3:
-                alpha_channel = temp_ds.GetRasterBand(temp_ds.RasterCount).ReadAsArray().astype(np.uint8)
+                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
         else:
-            original_raster = np.dstack([temp_ds.GetRasterBand(1).ReadAsArray()])
+            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray()])
 
             if band_number == 2:
-                alpha_channel = temp_ds.GetRasterBand(temp_ds.RasterCount).ReadAsArray().astype(np.uint8)
+                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
 
         temp_ds = None
 
@@ -96,8 +100,8 @@ def save_raster_as_png(raster_array, output_path, generate_alpha, normalize=True
 
 
 if __name__ == '__main__':
-    [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path] = \
-        load_config()
+    [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
+     seg_mask] = load_config()
     use_warp = False
 
     if not os.path.exists(raster_path):
@@ -152,8 +156,9 @@ if __name__ == '__main__':
             temp_y_max = y_steps[j]
             temp_y_min = y_steps[j + 1]
 
-            temp_output_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + ".tif"))
-            temp_output_path_png = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + ".png"))
+            temp_file_name = str("01") + "-" + str(j) + "-" + str(i)
+            temp_output_path = os.path.join(output_dir, (temp_file_name + ".tif"))
+            temp_output_path_png = os.path.join(output_dir, (temp_file_name + ".png"))
 
             temp_bounds = (abs(temp_x_min), abs(temp_y_max), abs(temp_x_max), abs(temp_y_min))
 
@@ -177,13 +182,13 @@ if __name__ == '__main__':
                                    output_path=temp_output_path_png, generate_alpha=generate_alpha)
 
             if crop_shape:
-                temp_shape_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + "_tmp.shp"))
-                temp_shx_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + "_tmp.shx"))
-                temp_dbf_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + "_tmp.dbf"))
-                temp_prj_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + "_tmp.prj"))
-                temp_cfg_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + "_tmp.cfg"))
+                temp_shape_path = os.path.join(output_dir, (temp_file_name + "_tmp.shp"))
+                temp_shx_path = os.path.join(output_dir, (temp_file_name + "_tmp.shx"))
+                temp_dbf_path = os.path.join(output_dir, (temp_file_name + "_tmp.dbf"))
+                temp_prj_path = os.path.join(output_dir, (temp_file_name + "_tmp.prj"))
+                temp_cfg_path = os.path.join(output_dir, (temp_file_name + "_tmp.cfg"))
 
-                crop_shape_path = os.path.join(output_dir, (str("01") + "-" + str(j) + "-" + str(i) + ".shp"))
+                crop_shape_path = os.path.join(output_dir, (temp_file_name + ".shp"))
 
                 if create_shapefile(geom_wkt=geom_poly.wkt, output_path=temp_shape_path, epsg=epsg):
                     if not clip_shapefile_with_shapefile(input_shapefile=shape_path, clip_shapefile=temp_shape_path,
@@ -202,6 +207,11 @@ if __name__ == '__main__':
                 if os.path.exists(temp_cfg_path):
                     os.remove(temp_cfg_path)
 
+                if seg_mask:
+                    seg_mask_path = os.path.join(output_dir, (temp_file_name + "_seg.tif"))
+
+                    vector_rasterization(shape_path=crop_shape_path, output_bounds=temp_bounds,
+                                         output_path=seg_mask_path, width=width, height=height)
     ds = None
 
     if os.path.exists(raster_path_4326):
