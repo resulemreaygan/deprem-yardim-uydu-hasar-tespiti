@@ -12,8 +12,8 @@ def crop_raster_with_translate(raster_path, output_path, res_x, res_y, output_bo
         else:
             raster_type = GDT_Byte
 
-        _ = Translate(output_path, raster_path, projWin=output_bounds,
-                            xRes=res_x, yRes=-res_y, outputType=raster_type, format=raster_format)
+        _ = Translate(output_path, raster_path, projWin=output_bounds, xRes=res_x, yRes=-res_y,
+                      outputType=raster_type, format=raster_format)
         _ = None
     except Exception as error:
         print(f"Raster kesme metotunda hata olustu: {error} - {raster_path}")
@@ -61,7 +61,8 @@ def change_raster_projection(raster_path, output_path, src_epsg="EPSG:3857", dst
         return False
 
 
-def vector_rasterization(shape_path, output_path, width, height, output_bounds, burn_value=255, output_bit=GDT_Byte):
+def vector_rasterization(shape_path, output_path, output_bounds, res_x, res_y, burn_value=255,
+                         output_bit=GDT_Byte):
     try:
         # if output_bounds is None:
         #     ds_shp = ogr.Open(shape_path)
@@ -69,7 +70,7 @@ def vector_rasterization(shape_path, output_path, width, height, output_bounds, 
         #     minx, maxx, miny, maxy = shp_layer.GetExtent()
         #     output_bounds = [minx, miny, maxx, maxy]
 
-        _ = Rasterize(output_path, shape_path, width=width, height=height ,burnValues=burn_value,
+        _ = Rasterize(output_path, shape_path, xRes=res_x, yRes=-res_y, burnValues=burn_value,
                       outputBounds=output_bounds, outputType=output_bit, outputSRS="EPSG:4326")
         _ = None
 
