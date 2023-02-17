@@ -7,5 +7,7 @@
   "save_as_png": true,
   "crop_shape": true,
   "shape_path": "",
-  "seg_mask": true
+  "seg_mask": true,
+  "seg_mask_as_png": true,
+  "convert_coco": true
 }

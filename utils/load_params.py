@@ -25,9 +25,11 @@ def load_config():
         raster_format = data["raster_format"]
         raster_path = data["raster_path"]
         seg_mask = data["seg_mask"]
+        seg_mask_as_png = data["seg_mask_as_png"]
+        convert_coco = data["convert_coco"]
 
         return [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
-                seg_mask]
+                seg_mask, seg_mask_as_png, convert_coco]
     except Exception as error:
         print(f"Konfig dosyasi yuklenirken hata olustu! - Hata: {error}")
         exit()

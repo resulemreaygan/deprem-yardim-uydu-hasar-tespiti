@@ -83,16 +83,21 @@ def save_raster_as_png(raster_array, output_path, generate_alpha, normalize=True
     else:
         result_array = raster_array.copy()
 
-    if alpha_channel is None or generate_alpha:
+    if generate_alpha:
         if raster_array.shape[-1] == 3:
-            alpha_channel = ((raster_array[:, :, 0] > 0) | (raster_array[:, :, 1] > 0) | (raster_array[:, :, 2] > 0)) \
-                            * np.uint8(255)
+            if alpha_channel is None:
+                alpha_channel = ((raster_array[:, :, 0] > 0) | (raster_array[:, :, 1] > 0) |
+                                 (raster_array[:, :, 2] > 0)) * np.uint8(255)
             result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 1], result_array[:, :, 2],
                                       alpha_channel])
         else:
-            alpha_channel = raster_array[:, :, 0].copy()
+            if alpha_channel is None:
+                alpha_channel = raster_array[:, :, 0].copy()
             result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0],
                                       alpha_channel])
+
+    if raster_array.shape[-1] == 1:
+        result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0]])
 
     plt.imsave(output_path, result_array, format='png')
 
@@ -101,14 +106,17 @@ def save_raster_as_png(raster_array, output_path, generate_alpha, normalize=True
 
 if __name__ == '__main__':
     [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
-     seg_mask] = load_config()
+     seg_mask, seg_mask_as_png, convert_coco] = load_config()
     use_warp = False
 
     if not os.path.exists(raster_path):
         print(f"Raster bulunamadi! - {raster_path}")
         exit()
 
+    raster_name = os.path.split(raster_path)[1]
+
     raster_path_4326 = os.path.join(output_dir, str(uuid4()) + '.tif')
+    annotations_path = os.path.join(output_dir,  raster_name.split('.')[0] + '_annotations.json')
 
     [geo_transform, x_min, y_max, res_x, res_y, width, height, epsg, geom_poly] = get_array_from_raster(
         file_path=raster_path)
@@ -149,6 +157,9 @@ if __name__ == '__main__':
             print(f"Shapefile bulunamadi! - {shape_path}")
             crop_shape = False
 
+    image_list = []
+    seg_list = []
+
     for i in range(x_round):
         for j in range(y_round):
             temp_x_min = x_steps[i]
@@ -176,6 +187,8 @@ if __name__ == '__main__':
 
             [original_raster, alpha_channel, geo_transform, min_x, max_y, res_x, res_y, width, height,
              epsg, geom_poly] = get_array_from_raster(file_path=temp_output_path, only_info=False)
+
+            image_list.append(temp_output_path)
 
             if save_as_png:
                 save_raster_as_png(raster_array=original_raster, alpha_channel=alpha_channel,
@@ -209,9 +222,24 @@ if __name__ == '__main__':
 
                 if seg_mask:
                     seg_mask_path = os.path.join(output_dir, (temp_file_name + "_seg.tif"))
+                    temp_mask_bounds = (abs(temp_x_min), abs(temp_y_min), abs(temp_x_max), abs(temp_y_max))
 
-                    vector_rasterization(shape_path=crop_shape_path, output_bounds=temp_bounds,
-                                         output_path=seg_mask_path, width=width, height=height)
+                    vector_rasterization(shape_path=crop_shape_path, output_bounds=temp_mask_bounds,
+                                         output_path=seg_mask_path, res_x=res_x, res_y=res_y)
+
+                    if seg_mask_as_png:
+                        seg_mask_png_path = os.path.join(output_dir, (temp_file_name + "_seg.png"))
+
+                        [_original_raster, _alpha_channel, _geo_transform, _min_x, _max_y, _res_x, _res_y, _width, _height,
+                         _epsg, _geom_poly] = get_array_from_raster(file_path=seg_mask_path, only_info=False)
+
+                        save_raster_as_png(raster_array=_original_raster, output_path=seg_mask_png_path,
+                                           generate_alpha=False)
+
+                        seg_list.append(seg_mask_png_path)
+                    else:
+                        seg_list.append(seg_mask_path)
+
     ds = None
 
     if os.path.exists(raster_path_4326):
