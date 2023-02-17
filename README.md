@@ -42,7 +42,7 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `crop_shape` = Verilen shapefile'ı çıktı raster'ın koordinatlarında keser.
 - `shape_path` = `crop_shape` parametresi `true` iken kesilecek shapefile'ın dosya yolunu temsil eder.
 - `seg_mask` = Verilen shapefile'ın `TIF` formatında segmentation mask'ının üretilmesini temsil eder.
-
+- `seg_mask_as_png` = Üretilen segmentation mask'ı `png` formatında kopyasının üretilmesini temsil eder.
 ## Katkı
 
 Katkı yapmak isterseniz lütfen önce neyi değiştirmek istediğiniz ile ilgili bir issue açın.
