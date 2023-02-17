@@ -67,8 +67,11 @@ def transform_polygon_osr(polygon, src_epsg=4326, dst_epsg=3857):
         print(f"Poligon transform isleminde hata olustu: {error}")
 
 
-def clip_shapefile_with_shapefile(input_shapefile, clip_shapefile, output_shapefile):
+def clip_shapefile_with_shapefile(input_shapefile, clip_shapefile, output_shapefile, epsg=4326):
     try:
+        srs = SpatialReference()
+        srs.ImportFromEPSG(epsg)
+
         in_ds = shape_driver.Open(input_shapefile, 0)
 
         if in_ds is None:
@@ -87,7 +90,7 @@ def clip_shapefile_with_shapefile(input_shapefile, clip_shapefile, output_shapef
         # print(in_clip_layer.GetFeatureCount())
 
         out_ds = shape_driver.CreateDataSource(output_shapefile)
-        out_layer = out_ds.CreateLayer('final', geom_type=ogr.wkbMultiPolygon)
+        out_layer = out_ds.CreateLayer('final', srs, ogr.wkbMultiPolygon)
 
         ogr.Layer.Clip(in_layer, in_clip_layer, out_layer)
         # print(out_layer.GetFeatureCount())
