@@ -43,6 +43,14 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `shape_path` = `crop_shape` parametresi `true` iken kesilecek shapefile'ın dosya yolunu temsil eder.
 - `seg_mask` = Verilen shapefile'ın `TIF` formatında segmentation mask'ının üretilmesini temsil eder.
 - `seg_mask_as_png` = Üretilen segmentation mask'ı `png` formatında kopyasının üretilmesini temsil eder.
+
+## Yapılacaklar
+
+- Verilen shapefile dosyasının EPSG türü kontrol edilip verilen raster'ın EPSG dönüşümü öyle yapılmalı. (Şu an varsayılan olarak shapefile 4326 kabul ediliyor.)
+- Verilen dosya yolları kontrol edilip yoksa üretilmeli.
+- Verilen shapefile'dan coco formatına dönüşüm yapılmalı.
+- Coco formatına dönüşüm yapılırken verilen shapefile içersinideki birden fazla sınıfa destek verilmeli. (Şu an bir tane var gibi kabul ediliyor.) 
+
 ## Katkı
 
 Katkı yapmak isterseniz lütfen önce neyi değiştirmek istediğiniz ile ilgili bir issue açın.
