@@ -2,19 +2,17 @@
 Author: Resul Emre AYGAN
 """
 
-import os
 from sys import exit
-from json import load
+from utils.file_operations import file_exists, load_json
 
 
 def load_config():
     try:
-        if not os.path.exists("config.json"):
+        if not file_exists(file_path="config.json"):
             print(f"Konfig dosyasi bulunamadi!")
             exit()
 
-        with open("config.json") as json_data_file:
-            data = load(json_data_file)
+        data = load_json(json_path="config.json")
 
         save_as_png = data["save_as_png"]
         output_dir = data["output_dir"]

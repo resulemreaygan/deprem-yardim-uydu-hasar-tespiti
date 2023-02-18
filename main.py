@@ -2,19 +2,18 @@
 Author: Resul Emre AYGAN
 """
 
-import os
 from sys import exit
 from osgeo import gdal
 import numpy as np
 from math import ceil
 import matplotlib.pyplot as plt
-from uuid import uuid4
 
 from utils.load_params import load_config
 from geometry_operations import bounds_to_polygon, transform_polygon_osr, check_epsg, lon_lat_to_geom, \
     create_shapefile, clip_shapefile_with_shapefile
 from raster_operations import crop_raster_with_warp, crop_raster_with_translate, change_raster_projection, \
     vector_rasterization
+from utils.file_operations import delete_file, file_exists, get_file_name, generate_temp_file_path
 
 
 def get_array_from_raster(file_path, only_info=True):
@@ -109,14 +108,15 @@ if __name__ == '__main__':
      seg_mask, seg_mask_as_png, convert_coco] = load_config()
     use_warp = False
 
-    if not os.path.exists(raster_path):
+    if not file_exists(file_path=raster_path):
         print(f"Raster bulunamadi! - {raster_path}")
         exit()
 
-    raster_name = os.path.split(raster_path)[1]
-
-    raster_path_4326 = os.path.join(output_dir, str(uuid4()) + '.tif')
-    annotations_path = os.path.join(output_dir,  raster_name.split('.')[0] + '_annotations.json')
+    raster_name = get_file_name(file_path=raster_path)
+    raster_path_4326 = generate_temp_file_path(output_path=output_dir, file_ext='tif')
+    annotations_path = generate_temp_file_path(output_path=output_dir,
+                                               file_ext='json',
+                                               file_name=raster_name.split('.')[0] + '_annotations')
 
     [geo_transform, x_min, y_max, res_x, res_y, width, height, epsg, geom_poly] = get_array_from_raster(
         file_path=raster_path)
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     y_steps = [y_max - y_size * i for i in range(y_round + 1)]
 
     if crop_shape:
-        if not os.path.exists(shape_path):
+        if not file_exists(file_path=shape_path):
             print(f"Shapefile bulunamadi! - {shape_path}")
             crop_shape = False
 
@@ -168,8 +168,10 @@ if __name__ == '__main__':
             temp_y_min = y_steps[j + 1]
 
             temp_file_name = str("01") + "-" + str(j) + "-" + str(i)
-            temp_output_path = os.path.join(output_dir, (temp_file_name + ".tif"))
-            temp_output_path_png = os.path.join(output_dir, (temp_file_name + ".png"))
+            temp_output_path = generate_temp_file_path(output_path=output_dir, file_name=temp_file_name, file_ext='tif')
+            temp_output_path_png = generate_temp_file_path(output_path=output_dir,
+                                                           file_name=temp_file_name,
+                                                           file_ext='png')
 
             temp_bounds = (abs(temp_x_min), abs(temp_y_max), abs(temp_x_max), abs(temp_y_min))
 
@@ -188,49 +190,61 @@ if __name__ == '__main__':
             [original_raster, alpha_channel, geo_transform, min_x, max_y, res_x, res_y, width, height,
              epsg, geom_poly] = get_array_from_raster(file_path=temp_output_path, only_info=False)
 
-            image_list.append(temp_output_path)
-
             if save_as_png:
                 save_raster_as_png(raster_array=original_raster, alpha_channel=alpha_channel,
                                    output_path=temp_output_path_png, generate_alpha=generate_alpha)
+                image_list.append(temp_output_path_png)
+            else:
+                image_list.append(temp_output_path)
 
             if crop_shape:
-                temp_shape_path = os.path.join(output_dir, (temp_file_name + "_tmp.shp"))
-                temp_shx_path = os.path.join(output_dir, (temp_file_name + "_tmp.shx"))
-                temp_dbf_path = os.path.join(output_dir, (temp_file_name + "_tmp.dbf"))
-                temp_prj_path = os.path.join(output_dir, (temp_file_name + "_tmp.prj"))
-                temp_cfg_path = os.path.join(output_dir, (temp_file_name + "_tmp.cfg"))
-
-                crop_shape_path = os.path.join(output_dir, (temp_file_name + ".shp"))
+                temp_shape_path = generate_temp_file_path(output_path=output_dir,
+                                                          file_name=temp_file_name + "_tmp",
+                                                          file_ext='shp')
+                temp_shx_path = generate_temp_file_path(output_path=output_dir,
+                                                        file_name=temp_file_name + "_tmp",
+                                                        file_ext='shx')
+                temp_dbf_path = generate_temp_file_path(output_path=output_dir,
+                                                        file_name=temp_file_name + "_tmp",
+                                                        file_ext='dbf')
+                temp_prj_path = generate_temp_file_path(output_path=output_dir,
+                                                        file_name=temp_file_name + "_tmp",
+                                                        file_ext='prj')
+                temp_cfg_path = generate_temp_file_path(output_path=output_dir,
+                                                        file_name=temp_file_name + "_tmp",
+                                                        file_ext='cfg')
+                crop_shape_path = generate_temp_file_path(output_path=output_dir,
+                                                          file_name=temp_file_name,
+                                                          file_ext='shp')
 
                 if create_shapefile(geom_wkt=geom_poly.wkt, output_path=temp_shape_path, epsg=epsg):
                     if not clip_shapefile_with_shapefile(input_shapefile=shape_path, clip_shapefile=temp_shape_path,
                                                          output_shapefile=crop_shape_path):
-                        if os.path.exists(crop_shape_path):
-                            os.remove(crop_shape_path)
+                        delete_file(file_path=crop_shape_path)
 
-                if os.path.exists(temp_shape_path):
-                    os.remove(temp_shape_path)
-                if os.path.exists(temp_shx_path):
-                    os.remove(temp_shx_path)
-                if os.path.exists(temp_dbf_path):
-                    os.remove(temp_dbf_path)
-                if os.path.exists(temp_prj_path):
-                    os.remove(temp_prj_path)
-                if os.path.exists(temp_cfg_path):
-                    os.remove(temp_cfg_path)
+                delete_file(file_path=temp_shape_path)
+                delete_file(file_path=temp_shx_path)
+                delete_file(file_path=temp_dbf_path)
+                delete_file(file_path=temp_prj_path)
+                delete_file(file_path=temp_cfg_path)
 
                 if seg_mask:
-                    seg_mask_path = os.path.join(output_dir, (temp_file_name + "_seg.tif"))
+                    seg_mask_path = generate_temp_file_path(output_path=output_dir,
+                                                            file_name=temp_file_name + "_seg",
+                                                            file_ext='tif')
+
                     temp_mask_bounds = (abs(temp_x_min), abs(temp_y_min), abs(temp_x_max), abs(temp_y_max))
 
                     vector_rasterization(shape_path=crop_shape_path, output_bounds=temp_mask_bounds,
                                          output_path=seg_mask_path, res_x=res_x, res_y=res_y)
 
                     if seg_mask_as_png:
-                        seg_mask_png_path = os.path.join(output_dir, (temp_file_name + "_seg.png"))
+                        seg_mask_png_path = generate_temp_file_path(output_path=output_dir,
+                                                                    file_name=temp_file_name + "_seg",
+                                                                    file_ext='png')
 
-                        [_original_raster, _alpha_channel, _geo_transform, _min_x, _max_y, _res_x, _res_y, _width, _height,
+                        [_original_raster, _alpha_channel, _geo_transform, _min_x, _max_y, _res_x, _res_y, _width,
+                         _height,
                          _epsg, _geom_poly] = get_array_from_raster(file_path=seg_mask_path, only_info=False)
 
                         save_raster_as_png(raster_array=_original_raster, output_path=seg_mask_png_path,
@@ -242,5 +256,4 @@ if __name__ == '__main__':
 
     ds = None
 
-    if os.path.exists(raster_path_4326):
-        os.remove(raster_path_4326)
+    delete_file(file_path=raster_path_4326)
