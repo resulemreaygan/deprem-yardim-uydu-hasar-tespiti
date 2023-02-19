@@ -2,13 +2,12 @@
 Author: Resul Emre AYGAN
 """
 
-from osgeo import ogr
-from osgeo.ogr import GetDriverByName
+from osgeo.ogr import GetDriverByName, wkbPolygon, Feature, CreateGeometryFromWkt, wkbMultiPolygon, Layer, Geometry
 from osgeo.osr import OAMS_TRADITIONAL_GIS_ORDER, SpatialReference, CoordinateTransformation
 from osgeo.gdal import __version__ as osgeo_version
 from shapely.geometry import Polygon, MultiPolygon
 from shapely import wkt
-
+import geopandas as gpd
 
 shape_driver = GetDriverByName("ESRI Shapefile")
 
@@ -40,9 +39,9 @@ def bounds_to_polygon(geom_bounds):
 def transform_polygon_osr(polygon, src_epsg=4326, dst_epsg=3857):
     try:
         if isinstance(polygon, Polygon) or isinstance(polygon, MultiPolygon):
-            polygon = ogr.CreateGeometryFromWkt(polygon.wkt)
+            polygon = CreateGeometryFromWkt(polygon.wkt)
 
-        if not isinstance(polygon, ogr.Geometry):
+        if not isinstance(polygon, Geometry):
             print("Geometri ogr geometri formatinda degil!")
             return False
 
@@ -90,9 +89,9 @@ def clip_shapefile_with_shapefile(input_shapefile, clip_shapefile, output_shapef
         # print(in_clip_layer.GetFeatureCount())
 
         out_ds = shape_driver.CreateDataSource(output_shapefile)
-        out_layer = out_ds.CreateLayer('final', srs, ogr.wkbMultiPolygon)
+        out_layer = out_ds.CreateLayer('final', srs, wkbMultiPolygon)
 
-        ogr.Layer.Clip(in_layer, in_clip_layer, out_layer)
+        Layer.Clip(in_layer, in_clip_layer, out_layer)
         # print(out_layer.GetFeatureCount())
 
         in_ds = None
@@ -112,11 +111,11 @@ def create_shapefile(geom_wkt, output_path, epsg=3857):
         srs = SpatialReference()
         srs.ImportFromEPSG(epsg)
 
-        layer = data_source.CreateLayer("polygons", srs, ogr.wkbPolygon)
+        layer = data_source.CreateLayer("polygons", srs, wkbPolygon)
 
-        feature = ogr.Feature(layer.GetLayerDefn())
+        feature = Feature(layer.GetLayerDefn())
 
-        polygon = ogr.CreateGeometryFromWkt(geom_wkt)
+        polygon = CreateGeometryFromWkt(geom_wkt)
 
         feature.SetGeometry(polygon)
 
@@ -127,4 +126,29 @@ def create_shapefile(geom_wkt, output_path, epsg=3857):
         return True
     except Exception as error:
         print(f"Shapefile olusturulurken hata olustu: {error} - {output_path}")
+        return False
+
+
+def read_shapefile_with_gpd(shapefile_path):
+    return gpd.read_file(shapefile_path)
+
+
+def get_categories_from_shapefile(shapefile_path):
+    vector_data = read_shapefile_with_gpd(shapefile_path=shapefile_path)
+
+    if 'damage_gra' in vector_data.keys():
+        return list(vector_data['damage_gra'].unique())
+    else:
+        return []
+
+
+def save_gdf_to_shapefile(output_path, epsg, gdf_data):
+    try:
+        if not gdf_data.empty:
+            gdf_data.to_file(output_path, driver='ESRI Shapefile', crs='EPSG:' + str(epsg))
+            return True
+        else:
+            return False
+    except Exception as error:
+        print(f"Geodataframe olusturulamadi! {error} - {output_path}")
         return False
