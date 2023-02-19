@@ -2,7 +2,10 @@
 Author: Resul Emre AYGAN
 """
 
-from osgeo.gdal import Translate, Warp, GDT_Byte, GDT_UInt16, GRA_Bilinear, Rasterize
+from osgeo.gdal import Open, Translate, Warp, GDT_Byte, GDT_UInt16, GRA_Bilinear, Rasterize
+import numpy as np
+from geometry_operations import check_epsg, lon_lat_to_geom
+import matplotlib.pyplot as plt
 
 
 def crop_raster_with_translate(raster_path, output_path, res_x, res_y, output_bounds, raster_format, raster_bit=8):
@@ -78,3 +81,90 @@ def vector_rasterization(shape_path, output_path, output_bounds, res_x, res_y, b
     except Exception as error:
         print(f"Vektorden raster uretilirken hata olustu: {error}")
         return False
+
+
+def get_array_from_raster(file_path, only_info=True):
+    raster_ds = Open(file_path)
+
+    if raster_ds is None:
+        raise IOError(f'Tif dosyasi acilamadi! {file_path}')
+
+    band_number = raster_ds.RasterCount
+    projection = raster_ds.GetProjection()
+    geo_transform = raster_ds.GetGeoTransform()
+
+    width = raster_ds.RasterXSize
+    height = raster_ds.RasterYSize
+
+    min_x = geo_transform[0]
+    min_y = geo_transform[3] + width * geo_transform[4] + height * geo_transform[5]
+    max_x = geo_transform[0] + width * geo_transform[1] + height * geo_transform[2]
+    max_y = geo_transform[3]
+
+    res_x = geo_transform[1]
+    res_y = geo_transform[5]
+
+    lon = [min_x, max_x, max_x, min_x]  # [ulx, lrx, lrx, ulx]
+    lat = [max_y, max_y, min_y, min_y]  # [uly, uly, lry, lry]
+
+    epsg = check_epsg(projection=projection)
+
+    geom_poly = lon_lat_to_geom(lon=lon, lat=lat)
+
+    alpha_channel = None
+
+    if not only_info:
+        if band_number > 2:
+            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray(),
+                                         raster_ds.GetRasterBand(2).ReadAsArray(),
+                                         raster_ds.GetRasterBand(3).ReadAsArray()])
+            if band_number > 3:
+                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
+        else:
+            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray()])
+
+            if band_number == 2:
+                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
+
+        temp_ds = None
+
+        return original_raster, alpha_channel, geo_transform, min_x, max_y, res_x, res_y, width, height, epsg, geom_poly
+    else:
+        temp_ds = None
+
+        return geo_transform, min_x, max_y, res_x, res_y, width, height, epsg, geom_poly
+
+
+def normalize_byte(raster_array):
+    info = np.iinfo(raster_array.dtype)
+    raster_array = raster_array.astype(np.float32) / info.max
+    raster_array = 255 * raster_array
+
+    return raster_array.astype(np.uint8)
+
+
+def save_raster_as_png(raster_array, output_path, generate_alpha, normalize=True, alpha_channel=None):
+    if normalize:
+        result_array = normalize_byte(raster_array=raster_array)
+    else:
+        result_array = raster_array.copy()
+
+    if generate_alpha:
+        if raster_array.shape[-1] == 3:
+            if alpha_channel is None:
+                alpha_channel = ((raster_array[:, :, 0] > 0) | (raster_array[:, :, 1] > 0) |
+                                 (raster_array[:, :, 2] > 0)) * np.uint8(255)
+            result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 1], result_array[:, :, 2],
+                                      alpha_channel])
+        else:
+            if alpha_channel is None:
+                alpha_channel = raster_array[:, :, 0].copy()
+            result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0],
+                                      alpha_channel])
+
+    if raster_array.shape[-1] == 1:
+        result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0]])
+
+    plt.imsave(output_path, result_array, format='png')
+
+    return output_path
