@@ -1,4 +1,7 @@
-numpy~=1.19.5
+numpy~=1.20.3
 matplotlib~=3.1.2
 shapely~=2.0.1
 GDAL~=3.2
+Pillow~=8.3.2
+scikit-image~=0.16.2
+geopandas~=0.12.2
