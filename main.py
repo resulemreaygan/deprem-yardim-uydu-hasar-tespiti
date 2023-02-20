@@ -3,110 +3,26 @@ Author: Resul Emre AYGAN
 """
 
 from sys import exit
-from osgeo import gdal
-import numpy as np
 from math import ceil
-import matplotlib.pyplot as plt
+from datetime import datetime
 
 from utils.load_params import load_config
-from geometry_operations import bounds_to_polygon, transform_polygon_osr, check_epsg, lon_lat_to_geom, \
-    create_shapefile, clip_shapefile_with_shapefile
+from geometry_operations import bounds_to_polygon, transform_polygon_osr, create_shapefile, \
+    clip_shapefile_with_shapefile, get_categories_from_shapefile, read_shapefile_with_gpd, save_gdf_to_shapefile
 from raster_operations import crop_raster_with_warp, crop_raster_with_translate, change_raster_projection, \
-    vector_rasterization
-from utils.file_operations import delete_file, file_exists, get_file_name, generate_temp_file_path
-
-
-def get_array_from_raster(file_path, only_info=True):
-    raster_ds = gdal.Open(file_path)
-
-    if raster_ds is None:
-        raise IOError(f'Tif dosyasi acilamadi! {file_path}')
-
-    band_number = raster_ds.RasterCount
-    projection = raster_ds.GetProjection()
-    geo_transform = raster_ds.GetGeoTransform()
-
-    width = raster_ds.RasterXSize
-    height = raster_ds.RasterYSize
-
-    min_x = geo_transform[0]
-    min_y = geo_transform[3] + width * geo_transform[4] + height * geo_transform[5]
-    max_x = geo_transform[0] + width * geo_transform[1] + height * geo_transform[2]
-    max_y = geo_transform[3]
-
-    res_x = geo_transform[1]
-    res_y = geo_transform[5]
-
-    lon = [min_x, max_x, max_x, min_x]  # [ulx, lrx, lrx, ulx]
-    lat = [max_y, max_y, min_y, min_y]  # [uly, uly, lry, lry]
-
-    epsg = check_epsg(projection=projection)
-
-    geom_poly = lon_lat_to_geom(lon=lon, lat=lat)
-
-    alpha_channel = None
-
-    if not only_info:
-        if band_number > 2:
-            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray(),
-                                         raster_ds.GetRasterBand(2).ReadAsArray(),
-                                         raster_ds.GetRasterBand(3).ReadAsArray()])
-            if band_number > 3:
-                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
-        else:
-            original_raster = np.dstack([raster_ds.GetRasterBand(1).ReadAsArray()])
-
-            if band_number == 2:
-                alpha_channel = raster_ds.GetRasterBand(raster_ds.RasterCount).ReadAsArray().astype(np.uint8)
-
-        temp_ds = None
-
-        return original_raster, alpha_channel, geo_transform, min_x, max_y, res_x, res_y, width, height, epsg, geom_poly
-    else:
-        temp_ds = None
-
-        return geo_transform, min_x, max_y, res_x, res_y, width, height, epsg, geom_poly
-
-
-def normalize_byte(raster_array):
-    info = np.iinfo(raster_array.dtype)
-    raster_array = raster_array.astype(np.float32) / info.max
-    raster_array = 255 * raster_array
-
-    return raster_array.astype(np.uint8)
-
-
-def save_raster_as_png(raster_array, output_path, generate_alpha, normalize=True, alpha_channel=None):
-    if normalize:
-        result_array = normalize_byte(raster_array=raster_array)
-    else:
-        result_array = raster_array.copy()
-
-    if generate_alpha:
-        if raster_array.shape[-1] == 3:
-            if alpha_channel is None:
-                alpha_channel = ((raster_array[:, :, 0] > 0) | (raster_array[:, :, 1] > 0) |
-                                 (raster_array[:, :, 2] > 0)) * np.uint8(255)
-            result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 1], result_array[:, :, 2],
-                                      alpha_channel])
-        else:
-            if alpha_channel is None:
-                alpha_channel = raster_array[:, :, 0].copy()
-            result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0],
-                                      alpha_channel])
-
-    if raster_array.shape[-1] == 1:
-        result_array = np.dstack([result_array[:, :, 0], result_array[:, :, 0], result_array[:, :, 0]])
-
-    plt.imsave(output_path, result_array, format='png')
-
-    return output_path
-
+    vector_rasterization, get_array_from_raster, save_raster_as_png
+from coco_operations import start_conversion_coco, check_categories, model_class
+from utils.file_operations import write_json, delete_file, file_exists, get_file_name, generate_temp_file_path
 
 if __name__ == '__main__':
+    print(f'Islem basladi - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+
     [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
      seg_mask, seg_mask_as_png, convert_coco] = load_config()
     use_warp = False
+
+    unique_categories = get_categories_from_shapefile(shapefile_path=shape_path)
+    categories_dict = check_categories(categories=unique_categories)
 
     if not file_exists(file_path=raster_path):
         print(f"Raster bulunamadi! - {raster_path}")
@@ -159,6 +75,7 @@ if __name__ == '__main__':
 
     image_list = []
     seg_list = []
+    categories_seg_list = []
 
     for i in range(x_round):
         for j in range(y_round):
@@ -228,6 +145,8 @@ if __name__ == '__main__':
                 delete_file(file_path=temp_prj_path)
                 delete_file(file_path=temp_cfg_path)
 
+                added_seg_list = False
+
                 if seg_mask:
                     seg_mask_path = generate_temp_file_path(output_path=output_dir,
                                                             file_name=temp_file_name + "_seg",
@@ -238,10 +157,79 @@ if __name__ == '__main__':
                     vector_rasterization(shape_path=crop_shape_path, output_bounds=temp_mask_bounds,
                                          output_path=seg_mask_path, res_x=res_x, res_y=res_y)
 
+                    if not len(categories_dict) == 1 and 'buildings' in categories_dict.keys():
+                        data = read_shapefile_with_gpd(shapefile_path=crop_shape_path)
+
+                        if 'damage_gra' in data.keys():
+                            for damage_gra_val in data['damage_gra'].unique():
+                                uncertain_case = False
+
+                                if damage_gra_val not in model_class.keys():
+                                    file_val = model_class[""]
+                                else:
+                                    file_val = model_class[damage_gra_val]
+
+                                categories_shape_path = generate_temp_file_path(
+                                    output_path=output_dir, file_name=f'{temp_file_name}_{file_val}',
+                                    file_ext='shp')
+
+                                if "Possibly damaged" == damage_gra_val or "Damaged" == damage_gra_val:
+                                    if file_exists(file_path=categories_shape_path):
+                                        continue
+                                    else:
+                                        uncertain_case = True
+
+                                categories_mask_path = generate_temp_file_path(
+                                    output_path=output_dir, file_name=f'{temp_file_name}_{file_val}_seg',
+                                    file_ext='tif')
+                                categories_mask_png_path = generate_temp_file_path(
+                                    output_path=output_dir, file_name=f'{temp_file_name}_{file_val}_seg',
+                                    file_ext='png')
+
+                                print(f'Kategorinin shapefile dosyasi olusturuluyor. {categories_shape_path} - '
+                                      f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+
+                                if uncertain_case:
+                                    filtered_data = data[(data['damage_gra'] == "Possibly damaged") |
+                                                         (data['damage_gra'] == "Damaged")]
+                                else:
+                                    filtered_data = data[data['damage_gra'] == damage_gra_val]
+
+                                if not save_gdf_to_shapefile(output_path=categories_shape_path, epsg=epsg,
+                                                             gdf_data=filtered_data):
+                                    continue
+
+                                print(f'Kategorinin segmentation mask dosyasi olusturuluyor. {categories_mask_path} - '
+                                      f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+
+                                vector_rasterization(shape_path=categories_shape_path, output_bounds=temp_mask_bounds,
+                                                     output_path=categories_mask_path, res_x=res_x, res_y=res_y,
+                                                     burn_value=categories_dict[file_val]['rgb'])
+                                if seg_mask_as_png:
+                                    print(
+                                        f'Kategorinin segmentation png dosyasi olusturuluyor. '
+                                        f'{categories_mask_png_path} - '
+                                        f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+                                    [_original_raster, _alpha_channel, _geo_transform, _min_x, _max_y, _res_x, _res_y,
+                                     _width, _height, _epsg, _geom_poly] = get_array_from_raster(
+                                        file_path=categories_mask_path, only_info=False)
+
+                                    save_raster_as_png(raster_array=_original_raster,
+                                                       output_path=categories_mask_png_path,
+                                                       generate_alpha=False)
+
+                                    categories_seg_list.append(categories_mask_png_path)
+                                    added_seg_list = True
+                                else:
+                                    categories_seg_list.append(categories_mask_path)
+                                    added_seg_list = True
+
                     if seg_mask_as_png:
                         seg_mask_png_path = generate_temp_file_path(output_path=output_dir,
                                                                     file_name=temp_file_name + "_seg",
                                                                     file_ext='png')
+                        print(f'Raster\'a ait tum segmantation png dosyasi olusturuluyor. {seg_mask_png_path} - '
+                              f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
                         [_original_raster, _alpha_channel, _geo_transform, _min_x, _max_y, _res_x, _res_y, _width,
                          _height,
@@ -250,10 +238,27 @@ if __name__ == '__main__':
                         save_raster_as_png(raster_array=_original_raster, output_path=seg_mask_png_path,
                                            generate_alpha=False)
 
-                        seg_list.append(seg_mask_png_path)
+                        if not added_seg_list:
+                            seg_list.append(seg_mask_png_path)
                     else:
-                        seg_list.append(seg_mask_path)
+                        if not added_seg_list:
+                            seg_list.append(seg_mask_path)
 
     ds = None
 
+    if convert_coco:
+        categories_path = generate_temp_file_path(output_path=output_dir, file_name='categories', file_ext='json')
+        write_json(output_path=categories_path, json_data=categories_dict)
+
+        categories_seg_list.extend(seg_list)
+        label_list = list(set(categories_seg_list))
+
+        annotations_dict = start_conversion_coco(image_list=image_list, width=width, height=height, seg_list=label_list,
+                                                 raster_name=raster_name, description="pre_annotation_sample",
+                                                 categories_dict=categories_dict)
+
+        write_json(output_path=annotations_path, json_data=annotations_dict)
+
     delete_file(file_path=raster_path_4326)
+
+    print(f'Islem tamamlandi - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
