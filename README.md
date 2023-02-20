@@ -9,10 +9,13 @@ Parçalara ayrılan görüntüler de etiketleme ve model eğitimi için kullanı
 [pip](https://pip.pypa.io/en/stable/) veya [conda](https://docs.conda.io/en/latest/) paket yöneticisini kullanarak gerekli paketleri yükleyebilirsiniz.
 
 ```bash
-pip install numpy~=1.19.5
+pip install numpy~=1.20.3
 pip install matplotlib~=3.1.2
 pip install shapely~=2.0.1
 pip install GDAL~=3.2
+pip install Pillow~=8.3.2
+pip install scikit-image~=0.16.2
+pip install geopandas~=0.12.2
 ```
 veya komutu direkt çalıştırarak kurulum yapabilirsiniz. `pip install -r requirements.txt`
 
@@ -48,8 +51,6 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 
 - Verilen shapefile dosyasının EPSG türü kontrol edilip verilen raster'ın EPSG dönüşümü öyle yapılmalı. (Şu an varsayılan olarak shapefile 4326 kabul ediliyor.)
 - Verilen dosya yolları kontrol edilip yoksa üretilmeli.
-- Verilen shapefile'dan coco formatına dönüşüm yapılmalı.
-- Coco formatına dönüşüm yapılırken verilen shapefile içersinideki birden fazla sınıfa destek verilmeli. (Şu an bir tane var gibi kabul ediliyor.) 
 
 ## Katkı
 
