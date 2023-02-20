@@ -4,6 +4,7 @@ Deprem yardım projesinin bir parçası olarak uydu görüntülerini TIFF format
 
 Parçalara ayrılan görüntüler de etiketleme ve model eğitimi için kullanılacaktır.
 
+Aynı zamanda uydu görüntüsü yanında shapefile formatında vektör veri kullanılırsa, uydu görüntüsü boyutlarında parçalara ayrılabilecektir. Etiketleme aşamasına destek sağlamak için segmentation mask ve coco formatında ön etiket oluşturulabilecektir.
 ## Installation
 
 [pip](https://pip.pypa.io/en/stable/) veya [conda](https://docs.conda.io/en/latest/) paket yöneticisini kullanarak gerekli paketleri yükleyebilirsiniz.
@@ -46,6 +47,7 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `shape_path` = `crop_shape` parametresi `true` iken kesilecek shapefile'ın dosya yolunu temsil eder.
 - `seg_mask` = Verilen shapefile'ın `TIF` formatında segmentation mask'ının üretilmesini temsil eder.
 - `seg_mask_as_png` = Üretilen segmentation mask'ı `png` formatında kopyasının üretilmesini temsil eder.
+- `convert_coco` = Üretilen segmentation mask'ı coco formatına dönüşümünü temsil eder.
 
 ## Yapılacaklar
 
