@@ -9,5 +9,9 @@
   "shape_path": "",
   "seg_mask": true,
   "seg_mask_as_png": true,
-  "convert_coco": true
+  "convert_coco": true,
+  "visualize_coco": true,
+  "coco_annotations_path": "",
+  "annotations_image_dir_path": "",
+  "drawn_annotations_path": ""
 }

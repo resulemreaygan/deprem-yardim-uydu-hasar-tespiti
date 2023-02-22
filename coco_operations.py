@@ -5,7 +5,7 @@ Author: Resul Emre AYGAN
 import re
 import os.path
 from datetime import datetime
-from PIL import Image
+from PIL import Image, ImageDraw
 from geometry_operations import Polygon
 import numpy as np
 from skimage import measure
@@ -13,6 +13,13 @@ import json
 
 model_class = {"No visible damage": "undamaged", "Destroyed": "damaged",
                "Possibly damaged": "uncertain", "Damaged": "uncertain", "": "buildings"}
+
+color_mapping = {
+    'undamaged': {'id': 1, 'rgb': [0, 255, 0]},
+    'damaged': {'id': 2, 'rgb': [255, 0, 0]},
+    'uncertain': {'id': 3, 'rgb': [255, 255, 0]},
+    'buildings': {'id': 4, 'rgb': [255, 255, 255]}
+}
 
 
 def write_licenses(name, index=1, url=""):
@@ -203,12 +210,6 @@ def start_conversion_coco(raster_name, image_list, width, height, seg_list, desc
 
 
 def check_categories(categories):
-    color_mapping = {
-        'undamaged': {'id': 1, 'rgb': [0, 255, 0]},
-        'damaged': {'id': 2, 'rgb': [255, 0, 0]},
-        'uncertain': {'id': 3, 'rgb': [255, 255, 0]},
-        'buildings': {'id': 4, 'rgb': [255, 255, 255]}
-    }
     if categories:
         categories_dict = {model_class[val]: color_mapping[model_class[val]]
                            for val in categories if val in model_class}
@@ -218,3 +219,47 @@ def check_categories(categories):
             return {'buildings': {'id': 4, 'rgb': [255, 255, 255]}}
     else:
         return {'buildings': {'id': 4, 'rgb': [255, 255, 255]}}
+
+
+def draw_coco_labels(annotations_dict, annotations_image_path, drawn_annotations_path):
+    annotations_by_image = {}
+
+    for annotation in annotations_dict["annotations"]:
+        image_id = annotation["image_id"]
+        if image_id not in annotations_by_image:
+            annotations_by_image[image_id] = []
+        annotations_by_image[image_id].append(annotation)
+
+    for image in annotations_dict["images"]:
+        image_path = os.path.join(annotations_image_path, image["file_name"])
+        image_data = Image.open(image_path)
+
+        annotations = annotations_by_image.get(image["id"], [])
+
+        draw_image = Image.new("RGB", image_data.size)
+        draw = ImageDraw.Draw(draw_image)
+
+        for annotation in annotations:
+            bbox = annotation["bbox"]
+            x, y, w, h = bbox
+            x1, y1, x2, y2 = x, y, x + w, y + h
+
+            category_name = annotations_dict["categories"][annotation["category_id"] - 1]["name"]
+
+            if category_name in color_mapping.keys():
+                rgb_value = tuple(color_mapping[category_name]['rgb'])
+            else:
+                rgb_value = (255, 0, 0)
+
+            draw.rectangle([x1, y1, x2, y2], outline=rgb_value)
+
+            draw.text((x1, y1), category_name, fill=rgb_value)
+
+        draw_image = draw_image.convert(image_data.mode)
+
+        draw_image = draw_image.resize(image_data.size)
+
+        merged_image = Image.blend(image_data, draw_image, alpha=0.5)
+
+        labeled_image_path = os.path.join(drawn_annotations_path, image["file_name"].split('.')[0] + '.png')
+        merged_image.save(labeled_image_path)

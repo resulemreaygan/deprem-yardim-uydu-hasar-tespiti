@@ -18,7 +18,8 @@ if __name__ == '__main__':
     print(f'Islem basladi - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
     [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
-     seg_mask, seg_mask_as_png, convert_coco] = load_config()
+     seg_mask, seg_mask_as_png, convert_coco, _visualize_coco, _annotations_path,
+     _annotations_image_path, _drawn_annotations_path] = load_config()
     use_warp = False
 
     unique_categories = get_categories_from_shapefile(shapefile_path=shape_path)
