@@ -2,12 +2,12 @@
 Author: Resul Emre AYGAN
 """
 
+import geopandas as gpd
+from osgeo.gdal import __version__ as osgeo_version
 from osgeo.ogr import GetDriverByName, wkbPolygon, Feature, CreateGeometryFromWkt, wkbMultiPolygon, Layer, Geometry
 from osgeo.osr import OAMS_TRADITIONAL_GIS_ORDER, SpatialReference, CoordinateTransformation
-from osgeo.gdal import __version__ as osgeo_version
-from shapely.geometry import Polygon, MultiPolygon
 from shapely import wkt
-import geopandas as gpd
+from shapely.geometry import Polygon, MultiPolygon
 
 shape_driver = GetDriverByName("ESRI Shapefile")
 

@@ -1,13 +1,18 @@
 # deprem-yardim-uydu-hasar-tespiti
 
-Deprem yardım projesinin bir parçası olarak uydu görüntülerini `TIFF` formatı üzerinden belirlenen genişlik ve yükseklikte parçalara ayırma ile ilgili çalışmadır. 
+Deprem yardım projesinin bir parçası olarak uydu görüntülerini `TIFF` formatı üzerinden belirlenen genişlik ve
+yükseklikte parçalara ayırma ile ilgili çalışmadır.
 
 Parçalara ayrılan görüntüler de etiketleme ve model eğitimi için kullanılacaktır.
 
-Aynı zamanda uydu görüntüsü yanında `shapefile` formatında vektör veri kullanılırsa, uydu görüntüsü boyutlarında parçalara ayrılabilecektir. Etiketleme aşamasına destek sağlamak için `segmentation mask` ve `coco` formatında ön etiket oluşturulabilecektir.
+Aynı zamanda uydu görüntüsü yanında `shapefile` formatında vektör veri kullanılırsa, uydu görüntüsü boyutlarında
+parçalara ayrılabilecektir. Etiketleme aşamasına destek sağlamak için `segmentation mask` ve `coco` formatında ön etiket
+oluşturulabilecektir.
+
 ## Installation
 
-[pip](https://pip.pypa.io/en/stable/) veya [conda](https://docs.conda.io/en/latest/) paket yöneticisini kullanarak gerekli paketleri yükleyebilirsiniz.
+[pip](https://pip.pypa.io/en/stable/) veya [conda](https://docs.conda.io/en/latest/) paket yöneticisini kullanarak
+gerekli paketleri yükleyebilirsiniz.
 
 ```bash
 pip install numpy~=1.20.3
@@ -18,6 +23,7 @@ pip install Pillow~=8.3.2
 pip install scikit-image~=0.16.2
 pip install geopandas~=0.12.2
 ```
+
 veya komutu direkt çalıştırarak kurulum yapabilirsiniz. `pip install -r requirements.txt`
 
 GDAL kurulumunda sorun yaşarsanız iletişime geçebilirsiniz.
@@ -27,8 +33,11 @@ GDAL kurulumunda sorun yaşarsanız iletişime geçebilirsiniz.
 Örnek veriseti paylaşılacaktır.
 
 ## Kullanım
+
 ### Colab:
+
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/resulemreaygan/deprem-yardim-uydu-hasar-tespiti)
+
 ### Local:
 
 config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu çalıştırabilirsiniz.
@@ -48,14 +57,16 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `seg_mask` = Verilen shapefile'ın `TIF` formatında segmentation mask'ının üretilmesini temsil eder.
 - `seg_mask_as_png` = Üretilen segmentation mask'ı `png` formatında kopyasının üretilmesini temsil eder.
 - `convert_coco` = Üretilen segmentation mask'ı `COCO` formatına dönüşümünü temsil eder.
-- `visualize_coco` = `Coco` formatındaki etiketlerin görüntü üzerine çizilmesini temsil eder.
-- `coco_annotations_path` = `Coco` etiket dosya yolunu temsil eder.
-- `annotations_image_dir_path` = `Coco` etiket dosyasında bulunan görüntülerin dizin dosya yolunu temsil eder.
-- `drawn_annotations_path` = `Coco` etiketlerinin görüntü üzerine çizildikten sonra çıktısının alınacağı dosya yolunu temsil eder.
+- `visualize_coco` = `COCO` formatındaki etiketlerin görüntü üzerine çizilmesini temsil eder.
+- `coco_annotations_path` = `COCO` etiket dosya yolunu temsil eder.
+- `annotations_image_dir_path` = `COCO` etiket dosyasında bulunan görüntülerin dizin dosya yolunu temsil eder.
+- `drawn_annotations_path` = `COCO` etiketlerinin görüntü üzerine çizildikten sonra çıktısının alınacağı dosya yolunu
+  temsil eder.
 
 ## Yapılacaklar
 
-- Verilen shapefile dosyasının EPSG türü kontrol edilip verilen raster'ın EPSG dönüşümü öyle yapılmalı. (Şu an varsayılan olarak shapefile 4326 kabul ediliyor.)
+- Verilen shapefile dosyasının EPSG türü kontrol edilip verilen raster'ın EPSG dönüşümü öyle yapılmalı. (Şu an
+  varsayılan olarak shapefile 4326 kabul ediliyor.)
 - Verilen dosya yolları kontrol edilip yoksa üretilmeli.
 
 ## Katkı
@@ -63,4 +74,5 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 Katkı yapmak isterseniz lütfen önce neyi değiştirmek istediğiniz ile ilgili bir issue açın.
 
 ## Lisans
+
 [Apache 2.0](http://www.apache.org/licenses/)

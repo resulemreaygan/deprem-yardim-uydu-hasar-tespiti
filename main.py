@@ -2,24 +2,24 @@
 Author: Resul Emre AYGAN
 """
 
-from sys import exit
-from math import ceil
 from datetime import datetime
+from math import ceil
+from sys import exit
 
-from utils.load_params import load_config
+from coco_operations import start_conversion_coco, check_categories, model_class
 from geometry_operations import bounds_to_polygon, transform_polygon_osr, create_shapefile, \
     clip_shapefile_with_shapefile, get_categories_from_shapefile, read_shapefile_with_gpd, save_gdf_to_shapefile
 from raster_operations import crop_raster_with_warp, crop_raster_with_translate, change_raster_projection, \
     vector_rasterization, get_array_from_raster, save_raster_as_png
-from coco_operations import start_conversion_coco, check_categories, model_class
 from utils.file_operations import write_json, delete_file, file_exists, get_file_name, generate_temp_file_path
+from utils.load_params import load_config
 
 if __name__ == '__main__':
     print(f'Islem basladi - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 
     [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
      seg_mask, seg_mask_as_png, convert_coco, _visualize_coco, _annotations_path,
-     _annotations_image_path, _drawn_annotations_path] = load_config()
+     _annotations_image_path, _drawn_annotations_path, _calculate_annotations_analysis] = load_config()
     use_warp = False
 
     unique_categories = get_categories_from_shapefile(shapefile_path=shape_path)
