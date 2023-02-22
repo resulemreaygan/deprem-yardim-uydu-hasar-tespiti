@@ -2,14 +2,17 @@
 Author: Resul Emre AYGAN
 """
 
-import re
-import os.path
-from datetime import datetime
-from PIL import Image, ImageDraw
-from geometry_operations import Polygon
-import numpy as np
-from skimage import measure
 import json
+import os.path
+import re
+from datetime import datetime
+
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image, ImageDraw
+from skimage import measure
+
+from geometry_operations import Polygon
 
 model_class = {"No visible damage": "undamaged", "Destroyed": "damaged",
                "Possibly damaged": "uncertain", "Damaged": "uncertain", "": "buildings"}
@@ -18,7 +21,10 @@ color_mapping = {
     'undamaged': {'id': 1, 'rgb': [0, 255, 0]},
     'damaged': {'id': 2, 'rgb': [255, 0, 0]},
     'uncertain': {'id': 3, 'rgb': [255, 255, 0]},
-    'buildings': {'id': 4, 'rgb': [255, 255, 255]}
+    'buildings': {'id': 4, 'rgb': [255, 255, 255]},
+    'wrecked_buildings': {'id': 5, 'rgb': [0, 0, 255]},
+    'undamaged_facility': {'id': 6, 'rgb': [0, 255, 255]},
+    'wrecked_facility': {'id': 7, 'rgb': [159, 74, 211]}
 }
 
 
@@ -127,14 +133,6 @@ def write_annotations(label_list, images_ids, is_crowd, categories):
                     category_id = value["id"]
                     image_id = images_ids[file_name]
                     break
-
-            # for rgb, sub_mask in sub.items():
-            #     for record in categories.keys():
-            #         if '_' + record in file_name:
-            #             file_name = re.sub('_' + record, '', file_name)
-            #             category_id = categories[record]['id']
-            #             image_id = images_ids[file_name]
-            #             break
 
             last_annotation_id, annotations_new = create_sub_mask_annotation(sub_mask=sub_mask, image_id=image_id,
                                                                              category_id=category_id,
@@ -263,3 +261,24 @@ def draw_coco_labels(annotations_dict, annotations_image_path, drawn_annotations
 
         labeled_image_path = os.path.join(drawn_annotations_path, image["file_name"].split('.')[0] + '.png')
         merged_image.save(labeled_image_path)
+
+
+def calc_annotations_statistics(annotations_dict, statistics_path):
+    class_counts = {}
+
+    for annotation in annotations_dict["annotations"]:
+        category_id = annotation["category_id"]
+        category_name = annotations_dict["categories"][category_id - 1]["name"]
+        if category_name not in class_counts:
+            class_counts[category_name] = 0
+        class_counts[category_name] += 1
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    bars = ax.bar(class_counts.keys(), class_counts.values())
+    ax.set_xticklabels(class_counts.keys(), rotation=90)
+
+    for i, bar in enumerate(bars):
+        count = class_counts[list(class_counts.keys())[i]]
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1, count, ha="center", va="bottom")
+
+    plt.savefig(os.path.join(statistics_path, "class_statistics.png"), bbox_inches='tight')

@@ -27,6 +27,7 @@ def load_config():
         coco_ann_path = data["coco_annotations_path"]
         coco_ann_image_path = data["annotations_image_dir_path"]
         drawn_annotations_path = data["drawn_annotations_path"]
+        calculate_annotations_analysis = data["calculate_annotations_analysis"]
 
         if not is_dir(dir_path=output_dir):
             raise Exception(f"Cikti dosya yolu dizin degil!")
@@ -55,6 +56,6 @@ def load_config():
 
         return [save_as_png, output_dir, crop_size_x, crop_size_y, crop_shape, shape_path, raster_format, raster_path,
                 seg_mask, seg_mask_as_png, convert_coco, visualize_coco, coco_ann_path, coco_ann_image_path,
-                drawn_annotations_path]
+                drawn_annotations_path, calculate_annotations_analysis]
     except Exception as error:
         raise Exception(f"Konfig dosyasi yuklenirken hata olustu! - Hata: {error}")

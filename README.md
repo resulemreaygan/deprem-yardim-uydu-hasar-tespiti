@@ -62,6 +62,8 @@ config.json dosyasındaki parametreleri belirledikten sonra aşağodaki komutu �
 - `annotations_image_dir_path` = `COCO` etiket dosyasında bulunan görüntülerin dizin dosya yolunu temsil eder.
 - `drawn_annotations_path` = `COCO` etiketlerinin görüntü üzerine çizildikten sonra çıktısının alınacağı dosya yolunu
   temsil eder.
+- `calculate_annotations_analysis`: `COCO` etiketlerinin sınıflarına göre sayılarının gösterildiği grafiğin 
+oluşturulmasını temsil eder.
 
 ## Yapılacaklar
 

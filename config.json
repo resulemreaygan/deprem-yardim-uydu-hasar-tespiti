@@ -13,5 +13,6 @@
   "visualize_coco": true,
   "coco_annotations_path": "",
   "annotations_image_dir_path": "",
-  "drawn_annotations_path": ""
+  "drawn_annotations_path": "",
+  "calculate_annotations_analysis": true
 }
