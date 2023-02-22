@@ -1,7 +1,8 @@
 """
 Author: Resul Emre AYGAN
 """
-import os.path
+
+from os import makedirs, path, remove
 from json import dump, load
 from uuid import uuid4
 
@@ -19,20 +20,36 @@ def load_json(json_path):
 
 
 def delete_file(file_path):
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    if path.exists(file_path):
+        remove(file_path)
 
 
 def file_exists(file_path):
-    return os.path.exists(file_path)
+    return path.exists(file_path)
+
+
+def is_dir(dir_path):
+    return path.isdir(dir_path)
+
+
+def is_file(file_path):
+    return path.isfile(file_path)
+
+
+def generate_dir(dir_path):
+    makedirs(dir_path, exist_ok=True)
 
 
 def get_file_name(file_path):
-    return os.path.split(file_path)[1].split('.')[0]
+    return get_file_name_with_ext(file_path=file_path).split('.')[0]
+
+
+def get_file_name_with_ext(file_path):
+    return path.split(file_path)[1]
 
 
 def generate_temp_file_path(output_path, file_ext, file_name=''):
     if file_name == '':
         file_name = str(uuid4())
 
-    return os.path.join(output_path, file_name + '.' + file_ext)
+    return path.join(output_path, file_name + '.' + file_ext)
